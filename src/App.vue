@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <h1 class="title">🎯 Wheel of Fortune</h1>
+    <h1 class="title">🎯 Колело на късмета</h1>
     
     <WheelComponent 
       :sectors="wheelConfig.sectors"
@@ -15,7 +15,7 @@
         @click="spin"
         :disabled="isSpinning"
       >
-        {{ isSpinning ? 'SPINNING...' : 'SPIN THE WHEEL' }}
+        {{ isSpinning ? 'ВЪРТИ СЕ...' : 'ЗАВЪРТИ КОЛЕЛОТО' }}
       </button>
     </div>
 
@@ -41,7 +41,7 @@
     <button 
       class="admin-toggle" 
       @click="toggleAdmin"
-      title="Toggle Admin Panel"
+      title="Показване/скриване на админ панела"
     >
       ⚙️
     </button>
@@ -75,13 +75,13 @@ export default {
     // Default wheel configuration
     const wheelConfig = reactive({
       sectors: [
-        { id: 1, label: 'WIN $100', color: '#ff6b6b', weight: 5 },
-        { id: 2, label: 'WIN $50', color: '#4ecdc4', weight: 10 },
-        { id: 3, label: 'WIN $25', color: '#45b7d1', weight: 15 },
-        { id: 4, label: 'TRY AGAIN', color: '#96ceb4', weight: 25 },
-        { id: 5, label: 'WIN $10', color: '#feca57', weight: 20 },
-        { id: 6, label: 'NO WIN', color: '#ff9ff3', weight: 15 },
-        { id: 7, label: 'WIN $5', color: '#f0932b', weight: 10 }
+        { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 5, isWinner: true },
+        { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 10, isWinner: true },
+        { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 15, isWinner: true },
+        { id: 4, label: 'ОПИТАЙ ОТНОВО', color: '#96ceb4', weight: 25, isWinner: false },
+        { id: 5, label: 'СПЕЧЕЛИ $10', color: '#feca57', weight: 20, isWinner: true },
+        { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#ff9ff3', weight: 15, isWinner: false },
+        { id: 7, label: 'СПЕЧЕЛИ $5', color: '#f0932b', weight: 10, isWinner: true }
       ]
     })
 

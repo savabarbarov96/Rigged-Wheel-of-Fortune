@@ -2,8 +2,8 @@
   <div v-if="show" class="pin-overlay" @click="closeModal">
     <div class="pin-modal" @click.stop>
       <div class="pin-header">
-        <h3>🔐 Admin Access</h3>
-        <p>Enter PIN to access admin panel</p>
+        <h3>🔐 Административен достъп</h3>
+        <p>Въведете ПИН за достъп до админ панела</p>
       </div>
       
       <div class="pin-input-container">
@@ -30,15 +30,15 @@
       </div>
       
       <div v-if="showError" class="pin-error">
-        ❌ Incorrect PIN. Try again.
+        ❌ Грешен ПИН. Опитайте отново.
       </div>
       
       <div class="pin-actions">
         <button class="btn btn-primary" @click="validatePin" :disabled="enteredPin.length !== 4">
-          Enter
+          Въведи
         </button>
         <button class="btn btn-secondary" @click="closeModal">
-          Cancel
+          Отказ
         </button>
       </div>
     </div>

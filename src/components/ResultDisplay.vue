@@ -15,7 +15,7 @@
           </div>
           
           <h2 class="result-title">
-            {{ isWinning ? 'Congratulations!' : 'Better Luck Next Time!' }}
+            {{ isWinning ? 'Поздравления!' : 'Следващия път повече късмет!' }}
           </h2>
           
           <div class="result-sector" :style="{ backgroundColor: result.color }">
@@ -28,10 +28,10 @@
           
           <div class="result-actions">
             <button class="btn btn-primary" @click="playAgain">
-              Play Again
+              Играй отново
             </button>
             <button class="btn btn-secondary" @click="closeResult">
-              Close
+              Затвори
             </button>
           </div>
         </div>
@@ -57,7 +57,8 @@ export default {
     const show = ref(false)
     
     const isWinning = computed(() => {
-      const label = props.result.label.toLowerCase()
+      if (typeof props.result.isWinner === 'boolean') return props.result.isWinner
+      const label = (props.result.label || '').toLowerCase()
       return label.includes('win') && label.includes('$')
     })
 
@@ -69,9 +70,9 @@ export default {
     
     const getResultMessage = () => {
       if (isWinning.value) {
-        return "You landed on a winning sector! 🎊"
+        return 'Падна се печеливш сектор! 🎊'
       } else {
-        return "Don't give up - try spinning again! 🍀"
+        return 'Не се отказвай — опитай пак! 🍀'
       }
     }
     

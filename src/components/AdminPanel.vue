@@ -1,14 +1,14 @@
 <template>
   <div class="admin-panel">
     <div class="admin-header">
-      <h3>🎛️ Admin Panel</h3>
-      <p class="admin-subtitle">Control wheel probabilities and settings</p>
+      <h3>🎛️ Административен панел</h3>
+      <p class="admin-subtitle">Контрол на вероятностите и настройките на колелото</p>
     </div>
     
     <div class="admin-content">
       <!-- Sector Configuration -->
       <div class="section">
-        <h4>Sector Configuration</h4>
+        <h4>Конфигурация на секторите</h4>
         <div class="sectors-list">
           <div 
             v-for="(sector, index) in localConfig.sectors" 
@@ -19,17 +19,17 @@
             
             <div class="sector-controls">
               <div class="input-group">
-                <label>Label:</label>
+                <label>Етикет:</label>
                 <input 
                   type="text" 
                   v-model="sector.label"
                   @input="updateConfig"
-                  placeholder="Sector label"
+                  placeholder="Етикет на сектора"
                 />
               </div>
               
               <div class="input-group">
-                <label>Weight:</label>
+                <label>Тежест:</label>
                 <input 
                   type="number" 
                   v-model.number="sector.weight"
@@ -41,19 +41,24 @@
               </div>
               
               <div class="input-group">
-                <label>Color:</label>
+                <label>Цвят:</label>
                 <input 
                   type="color" 
                   v-model="sector.color"
                   @input="updateConfig"
                 />
               </div>
+
+              <div class="input-group">
+                <label>Печеливш?</label>
+                <input type="checkbox" v-model="sector.isWinner" @change="updateConfig" />
+              </div>
               
               <button 
                 class="btn-remove"
                 @click="removeSector(index)"
                 :disabled="localConfig.sectors.length <= 2"
-                title="Remove sector"
+                title="Премахни сектор"
               >
                 🗑️
               </button>
@@ -62,13 +67,13 @@
         </div>
         
         <button class="btn btn-add" @click="addSector">
-          ➕ Add Sector
+          ➕ Добави сектор
         </button>
       </div>
       
       <!-- Probability Overview -->
       <div class="section">
-        <h4>Probability Overview</h4>
+        <h4>Преглед на вероятностите</h4>
         <div class="probability-chart">
           <div 
             v-for="sector in sectorsWithProbability" 
@@ -92,43 +97,43 @@
       
       <!-- Statistics -->
       <div class="section" v-if="statistics.totalSpins > 0">
-        <h4>Spin Statistics</h4>
+        <h4>Статистика на завъртанията</h4>
         <div class="stats-grid">
           <div class="stat-item">
-            <span class="stat-label">Total Spins:</span>
+            <span class="stat-label">Общо завъртания:</span>
             <span class="stat-value">{{ statistics.totalSpins }}</span>
           </div>
         </div>
         
         <div class="win-distribution" v-if="statistics.winDistribution">
-          <h5>Win Distribution:</h5>
+          <h5>Разпределение на печалбите:</h5>
           <div 
             v-for="(count, label) in statistics.winDistribution" 
             :key="label"
             class="distribution-item"
           >
             <span>{{ label }}:</span>
-            <span>{{ count }} times ({{ ((count / statistics.totalSpins) * 100).toFixed(1) }}%)</span>
+            <span>{{ count }} пъти ({{ ((count / statistics.totalSpins) * 100).toFixed(1) }}%)</span>
           </div>
         </div>
         
         <button class="btn btn-secondary" @click="resetStats">
-          Reset Statistics
+          Нулирай статистиката
         </button>
       </div>
       
       <!-- Presets -->
       <div class="section">
-        <h4>Presets</h4>
+        <h4>Шаблони</h4>
         <div class="preset-buttons">
           <button class="btn btn-preset" @click="loadPreset('fair')">
-            Fair (Equal chances)
+            Равно (равни шансове)
           </button>
           <button class="btn btn-preset" @click="loadPreset('rigged-low')">
-            Rigged (Low win rate)
+            Манипулирано (нисък шанс за печалба)
           </button>
           <button class="btn btn-preset" @click="loadPreset('rigged-high')">
-            Rigged (High win rate)
+            Манипулирано (висок шанс за печалба)
           </button>
         </div>
       </div>
@@ -180,9 +185,10 @@ export default {
       
       localConfig.value.sectors.push({
         id: newId,
-        label: `Sector ${newId}`,
+        label: `Сектор ${newId}`,
         color: randomColor,
-        weight: 10
+        weight: 10,
+        isWinner: true
       })
       
       updateConfig()
@@ -201,32 +207,32 @@ export default {
       switch (presetName) {
         case 'fair':
           presetSectors = [
-            { id: 1, label: 'WIN $100', color: '#ff6b6b', weight: 20 },
-            { id: 2, label: 'WIN $50', color: '#4ecdc4', weight: 20 },
-            { id: 3, label: 'WIN $25', color: '#45b7d1', weight: 20 },
-            { id: 4, label: 'WIN $10', color: '#96ceb4', weight: 20 },
-            { id: 5, label: 'TRY AGAIN', color: '#feca57', weight: 20 }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 20, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 20, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 20, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 20, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 20, isWinner: false }
           ]
           break
           
         case 'rigged-low':
           presetSectors = [
-            { id: 1, label: 'WIN $100', color: '#ff6b6b', weight: 2 },
-            { id: 2, label: 'WIN $50', color: '#4ecdc4', weight: 5 },
-            { id: 3, label: 'WIN $25', color: '#45b7d1', weight: 8 },
-            { id: 4, label: 'WIN $10', color: '#96ceb4', weight: 10 },
-            { id: 5, label: 'TRY AGAIN', color: '#feca57', weight: 25 },
-            { id: 6, label: 'NO WIN', color: '#ff9ff3', weight: 50 }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 2, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 5, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 8, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 10, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 25, isWinner: false },
+            { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#ff9ff3', weight: 50, isWinner: false }
           ]
           break
           
         case 'rigged-high':
           presetSectors = [
-            { id: 1, label: 'WIN $100', color: '#ff6b6b', weight: 15 },
-            { id: 2, label: 'WIN $50', color: '#4ecdc4', weight: 25 },
-            { id: 3, label: 'WIN $25', color: '#45b7d1', weight: 30 },
-            { id: 4, label: 'WIN $10', color: '#96ceb4', weight: 20 },
-            { id: 5, label: 'TRY AGAIN', color: '#feca57', weight: 10 }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 15, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 25, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 30, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 20, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 10, isWinner: false }
           ]
           break
       }
