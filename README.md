@@ -2,6 +2,10 @@
 
 A fully customizable, rigged wheel of fortune web application built with Vue 3 and Anime.js. Perfect for promotions, games, and events where you need to control the outcomes while maintaining the appearance of randomness.
 
+## Demo 
+https://rigged-wheel-of-fortune.vercel.app/ (the first spin is bugged, pending fix)
+PIN for the settings: 6969 (nice)
+
 ## ✨ Features
 
 ### 🎛️ **Rigged System**
