@@ -87,6 +87,53 @@ export default {
     
     const wheelSize = ref(400)
     const currentRotation = ref(0)
+    const activeAnimation = ref(null)
+
+    // Sound tick support
+    const audioCtx = ref(null)
+    const sectorSpanRef = ref(0)
+    const nextTickAt = ref(0)
+    const tickingEnabled = ref(false)
+
+    const ensureAudio = async () => {
+      if (typeof window === 'undefined') return
+      if (!audioCtx.value) {
+        const Ctx = window.AudioContext || window.webkitAudioContext
+        if (Ctx) audioCtx.value = new Ctx()
+      }
+      if (audioCtx.value && audioCtx.value.state === 'suspended') {
+        try { await audioCtx.value.resume() } catch (e) {}
+      }
+    }
+
+    const playTick = async (volume = 1) => {
+      await ensureAudio()
+      const ctx = audioCtx.value
+      if (!ctx) return
+
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      const hp = ctx.createBiquadFilter()
+
+      // A crisp mechanical tick
+      osc.type = 'triangle'
+      osc.frequency.setValueAtTime(2200, now)
+      hp.type = 'highpass'
+      hp.frequency.setValueAtTime(800, now)
+      gain.gain.setValueAtTime(0.0001, now)
+      gain.gain.linearRampToValueAtTime(0.18 * volume, now + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06)
+
+      osc.connect(hp)
+      hp.connect(gain)
+      gain.connect(ctx.destination)
+
+      try {
+        osc.start(now)
+        osc.stop(now + 0.07)
+      } catch (e) {}
+    }
     
     // Calculate sector angles
     const sectorAngles = computed(() => {
@@ -158,42 +205,92 @@ export default {
       if (!winnerSector) return
       
       // Calculate target rotation
-      // Arrow points at top (270 degrees in SVG coordinates), rotate wheel so winner aligns with arrow
-      // Add some randomness within the sector bounds for authenticity
+      // Arrow points at top (270 degrees in SVG coordinates); rotate wheel so winner aligns with arrow
+      // Add subtle randomness within the sector bounds for authenticity
       const sectorSpan = 360 / props.sectors.length
-      const randomOffset = (Math.random() - 0.5) * sectorSpan * 0.8 // 80% of sector width
+      const randomOffset = (Math.random() - 0.5) * sectorSpan * 0.6 // 60% of sector width to avoid edge overlaps
       const targetAngle = 270 - winnerSector.centerAngle + randomOffset
-      
-      // Add multiple full rotations for dramatic effect
-      const extraRotations = 6 + Math.floor(Math.random() * 4) // 6-9 full rotations (increased from original 3-5)
+
+      // Determine long spin with a fast start and smooth finish
+      const startRotation = currentRotation.value || 0
+      const extraRotations = 10 + Math.floor(Math.random() * 7) // 10-16 full rotations
       const finalRotation = targetAngle + (extraRotations * 360)
-      
-      // Debug logging to verify rigging calculations
-      console.log('🎯 RIGGING DEBUG:', {
-        winner: winner.label,
-        winnerSectorCenter: winnerSector.centerAngle,
-        sectorSpan,
-        randomOffset: randomOffset.toFixed(2),
-        targetAngle: targetAngle.toFixed(2),
-        extraRotations,
-        finalRotation: finalRotation.toFixed(2),
-        expectedFinalPosition: ((winnerSector.centerAngle + finalRotation) % 360).toFixed(2) + '° (should be ≈270°)'
-      })
-      
-      // Create realistic spin animation with fake spinning phase
-      const animation = anime({
+      const totalDelta = finalRotation - startRotation
+
+      // Partition the rotation into realistic phases: accelerate → cruise → decelerate
+      const accelDelta = Math.min(720, Math.max(540, totalDelta * 0.1)) // ~1.5–2 turns
+      const decelDelta = Math.min(1260, Math.max(900, totalDelta * 0.18)) // ~2.5–3.5 turns
+      const cruiseDelta = Math.max(360, totalDelta - accelDelta - decelDelta) // remaining turns
+
+      const accelEnd = startRotation + accelDelta
+      const cruiseEnd = accelEnd + cruiseDelta
+      const decelEnd = finalRotation // must land here exactly
+
+      // Clean up any previous animation
+      if (activeAnimation.value) {
+        try { activeAnimation.value.pause() } catch (e) {}
+        anime.remove(wheelGroup.value)
+      }
+
+      // Build a timeline: quick acceleration, steady cruise, smooth deceleration to the exact target
+      const cruiseSpeedDegPerSec = 2200 // visual speed during cruise
+      const accelDuration = 600 + Math.random() * 200 // 0.6–0.8s
+      const cruiseDuration = Math.max(1200, (cruiseDelta / cruiseSpeedDegPerSec) * 1000)
+      const decelDuration = 1800 + Math.random() * 600 // 1.8–2.4s
+
+      const tl = anime.timeline({
         targets: wheelGroup.value,
-        rotate: finalRotation,
-        duration: 2000 + Math.random() * 1000, // 2-3 seconds (original timing)
-        easing: 'cubicBezier(0.17, 0.67, 0.12, 0.99)', // More dramatic deceleration (original)
-        transformOrigin: '50% 50%', // Center of the wheel (percentage-based for better responsiveness)
+        easing: 'linear',
+        autoplay: true,
+        update: (anim) => {
+          // Emit tick when crossing each sector boundary under the pointer
+          let current = 0
+          if (anim && Array.isArray(anim.animations)) {
+            const rotAnim = anim.animations.find(a => a.type === 'transform' && a.property === 'rotate')
+            if (rotAnim && typeof rotAnim.currentValue === 'string') {
+              current = parseFloat(rotAnim.currentValue) || 0
+            } else {
+              const v = anime.get(wheelGroup.value, 'rotate')
+              current = typeof v === 'number' ? v : parseFloat(v) || 0
+            }
+          }
+          if (tickingEnabled.value) {
+            while (current >= nextTickAt.value) {
+              // Volume subtly scales with speed: louder during cruise, softer near stop
+              const remaining = Math.max(0, decelEnd - current)
+              const softness = Math.min(1, remaining / 720) // softer in last ~2 turns
+              const volume = 0.8 * (0.6 + 0.4 * softness)
+              playTick(volume)
+              nextTickAt.value += sectorSpanRef.value
+            }
+          }
+        },
         complete: () => {
-          currentRotation.value = finalRotation % 360
+          currentRotation.value = ((decelEnd % 360) + 360) % 360 // normalize
+          activeAnimation.value = null
+          tickingEnabled.value = false
           emit('spin-complete', winner)
         }
       })
-      
-      return animation.finished
+
+      tl
+        // Accelerate quickly to build momentum
+        .add({ rotate: accelEnd, duration: accelDuration, easing: 'easeInCubic', transformOrigin: '50% 50%' })
+        // Maintain a fast, steady spin for longer visual effect
+        .add({ rotate: cruiseEnd, duration: cruiseDuration, easing: 'linear' })
+        // Smoothly decelerate and land precisely on target
+        .add({ rotate: decelEnd, duration: decelDuration, easing: 'cubicBezier(0.17, 0.67, 0.12, 0.99)' })
+
+      // Initialize ticking cadence based on sector span and current angle
+      sectorSpanRef.value = sectorSpan
+      const startNorm = ((startRotation % 360) + 360) % 360
+      let toNextBoundary = sectorSpan - (startNorm % sectorSpan)
+      if (toNextBoundary === 0) toNextBoundary = sectorSpan
+      nextTickAt.value = startRotation + toNextBoundary
+      tickingEnabled.value = true
+
+      activeAnimation.value = tl
+      return tl.finished
     }
 
     // Initialize wheel on component mount to ensure proper centering
