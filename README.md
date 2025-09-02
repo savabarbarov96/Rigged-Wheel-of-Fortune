@@ -4,7 +4,7 @@ A fully customizable, rigged wheel of fortune web application built with Vue 3 a
 
 ## Demo 
 https://rigged-wheel-of-fortune.vercel.app/ (the first spin is bugged, pending fix)
-PIN for the settings: 6969 (nice)
+## PIN for the settings where you can control the chance: 6969 (nice)
 
 ## ✨ Features
 
