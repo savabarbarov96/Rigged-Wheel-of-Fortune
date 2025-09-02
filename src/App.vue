@@ -1,6 +1,9 @@
 <template>
   <div class="app">
-    <h1 class="title">🎯 Колело на късмета</h1>
+    <h1 class="title">
+      <img src="/logo-small.png" alt="Logo" class="logo" />
+      Колело на късмета
+    </h1>
     
     <WheelComponent 
       :sectors="wheelConfig.sectors"
@@ -120,16 +123,13 @@ export default {
       wheelConfig.sectors = newConfig.sectors
     }
 
-    // PIN Authentication
-    const checkAuthentication = () => {
-      isAdminAuthenticated.value = sessionStorage.getItem('adminAuthenticated') === 'true'
-    }
-
+    // PIN Authentication - always require PIN entry
     const toggleAdmin = () => {
-      if (!isAdminAuthenticated.value) {
-        showPinModal.value = true
-      } else {
-        showAdmin.value = !showAdmin.value
+      // Always show PIN modal when settings button is clicked
+      showPinModal.value = true
+      // Hide admin panel when toggling
+      if (showAdmin.value) {
+        showAdmin.value = false
       }
     }
 
@@ -142,8 +142,7 @@ export default {
       showPinModal.value = false
     }
 
-    // Check authentication on component mount
-    checkAuthentication()
+    // No longer checking authentication on mount as we require PIN every time
 
     return {
       wheelRef,
@@ -179,6 +178,17 @@ export default {
   margin-bottom: 2rem;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.logo {
+  height: 150px;
+  width: auto;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
 }
 
 .controls {
@@ -215,8 +225,13 @@ export default {
   .title {
     font-size: 2rem;
     margin-bottom: 1rem;
+    gap: 0.6rem;
   }
-  
+
+  .logo {
+    height: 120px;
+  }
+
   .spin-btn {
     font-size: 1.1rem;
     padding: 15px 30px;
