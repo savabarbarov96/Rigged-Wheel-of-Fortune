@@ -355,8 +355,8 @@ export default {
   font-family: 'Arial', sans-serif;
   font-size: 14px;
   font-weight: bold;
-  fill: #333;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+  fill: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   pointer-events: none;
 }
 

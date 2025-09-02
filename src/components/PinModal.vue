@@ -65,8 +65,7 @@ export default {
     
     const validatePin = () => {
       if (enteredPin.value === correctPin) {
-        // Store successful authentication
-        sessionStorage.setItem('adminAuthenticated', 'true')
+        // No longer storing authentication in session storage
         emit('success')
         closeModal()
       } else {
