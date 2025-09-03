@@ -16,6 +16,13 @@ const PORT = process.env.PORT || 3001
 // Middleware
 app.use(cors())
 app.use(express.json())
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path}`)
+  next()
+})
+
 app.use(express.static(path.join(__dirname, '../dist')))
 
 // Initialize SQLite database
@@ -185,9 +192,19 @@ app.get('/api/config/history', (req, res) => {
   )
 })
 
-// Serve the frontend for all non-API routes
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() })
+})
+
+// Serve the frontend for all non-API routes (must be last)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'))
+  // Only serve index.html for non-API routes
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({ error: 'API endpoint not found' })
+  } else {
+    res.sendFile(path.join(__dirname, '../dist/index.html'))
+  }
 })
 
 // Start server

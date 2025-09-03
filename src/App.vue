@@ -94,8 +94,10 @@ export default {
     // Load configuration from API or use defaults
     const loadWheelConfig = async () => {
       try {
-        // Use relative URL that works in both dev and production
-        const apiUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/config' : '/api/config'
+        // In production, API runs on same server; in dev, it's on port 3001
+        const apiUrl = window.location.hostname === 'localhost' && window.location.port === '3000' 
+          ? 'http://localhost:3001/api/config' 
+          : '/api/config'
         const response = await fetch(apiUrl)
         if (response.ok) {
           const config = await response.json()
@@ -110,8 +112,10 @@ export default {
     // Save configuration to database via API
     const saveWheelConfig = async (config) => {
       try {
-        // Use correct URL for both dev and production
-        const apiUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/config' : '/api/config'
+        // In production, API runs on same server; in dev, it's on port 3001
+        const apiUrl = window.location.hostname === 'localhost' && window.location.port === '3000'
+          ? 'http://localhost:3001/api/config'
+          : '/api/config'
         const response = await fetch(apiUrl, {
           method: 'PUT',
           headers: {

@@ -11,8 +11,10 @@ npm install
 echo "🏗️  Building frontend..."
 npm run build
 
-# Create server directory if it doesn't exist
+# Create necessary directories
+echo "📁 Creating directories..."
 mkdir -p server
+mkdir -p logs
 
 # Set permissions for the database
 echo "🗄️  Setting up database permissions..."
@@ -26,19 +28,36 @@ if ! command -v pm2 &> /dev/null; then
     npm install -g pm2
 fi
 
-echo "✅ Deployment preparation complete!"
+# Stop existing PM2 process if running
+echo "🛑 Stopping existing PM2 process..."
+npm run pm2:stop 2>/dev/null || true
+
+# Start with PM2
+echo "🚀 Starting application with PM2..."
+npm run pm2:start
+
+# Save PM2 configuration for auto-restart on boot
+echo "💾 Saving PM2 configuration..."
+pm2 save
+
+# Set up PM2 startup script (requires sudo, will show command to run)
+echo "🔄 Setting up PM2 startup script..."
+echo "To enable auto-start on boot, run this command as root:"
+echo "   sudo env PATH=\$PATH:\$(which node | sed 's/\/node\$/\//'/) \$(which pm2) startup systemd -u \$(whoami) --hp \$(eval echo ~\$(whoami))"
+
 echo ""
-echo "🚀 To start the server:"
-echo "   npm run start       (for one-time run)"
-echo "   pm2 start server/index.js --name wheel-app    (for production)"
+echo "✅ Deployment complete!"
 echo ""
-echo "📊 Database will be created at: server/wheel_config.db"
-echo "🌐 Server will run on port 3001 by default"
+echo "🌐 Application is running at: http://localhost:3001"
+echo "📊 Database location: server/wheel_config.db"
+echo "📝 Logs location: logs/"
 echo ""
-echo "🔧 Environment variables you can set:"
-echo "   PORT=3001          (server port)"
+echo "🔧 PM2 Management commands:"
+echo "   npm run pm2:status    - Check status"
+echo "   npm run pm2:logs      - View logs"
+echo "   npm run pm2:restart   - Restart app"
+echo "   npm run pm2:stop      - Stop app"
+echo "   npm run deploy        - Build & restart"
 echo ""
-echo "📋 To check PM2 status: pm2 status"
-echo "📋 To stop PM2 service: pm2 stop wheel-app"
-echo "📋 To restart PM2 service: pm2 restart wheel-app"
+echo "🔄 For future updates, just run: npm run deploy"
 

@@ -38,24 +38,33 @@ chmod +x deploy.sh
 
 ### 3. Start the Application
 
+#### Automatic PM2 Deployment:
+```bash
+# One-command deployment with PM2
+./deploy.sh
+```
+
+#### Manual PM2 Commands:
+```bash
+# Start with PM2
+npm run pm2:start
+
+# Check status
+npm run pm2:status
+
+# View logs
+npm run pm2:logs
+
+# Restart
+npm run pm2:restart
+
+# Stop
+npm run pm2:stop
+```
+
 #### For Development/Testing:
 ```bash
 npm run start
-```
-
-#### For Production:
-```bash
-# Install PM2 globally (if not already installed)
-npm install -g pm2
-
-# Start the application with PM2
-pm2 start server/index.js --name wheel-app
-
-# Save PM2 configuration
-pm2 save
-
-# Setup PM2 to start on boot
-pm2 startup
 ```
 
 ## 🌐 Server Configuration
