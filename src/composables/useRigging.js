@@ -96,8 +96,8 @@ export function useRigging() {
       errors.push('All sectors must have labels')
     }
     
-    if (sectors.some(sector => !sector.weight || sector.weight <= 0)) {
-      errors.push('All sectors must have positive weights')
+    if (sectors.some(sector => sector.weight === undefined || sector.weight === null || sector.weight < 0)) {
+      errors.push('All sectors must have weights >= 0 (use 0 to disable a sector)')
     }
     
     if (sectors.some(sector => !sector.color)) {
@@ -106,7 +106,7 @@ export function useRigging() {
     
     const totalWeight = sectors.reduce((sum, sector) => sum + (sector.weight || 0), 0)
     if (totalWeight === 0) {
-      errors.push('Total weight must be greater than 0')
+      errors.push('At least one sector must have weight > 0')
     }
     
     return {
