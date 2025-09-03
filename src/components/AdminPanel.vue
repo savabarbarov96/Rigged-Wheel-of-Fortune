@@ -141,6 +141,16 @@
       <!-- Configuration Management -->
       <div class="section">
         <h4>Управление на конфигурацията</h4>
+        <div class="auto-save-status">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span>Автоматично запазване: Активно</span>
+          </div>
+          <p class="status-description">
+            Промените се запазват автоматично в базата данни и са достъпни на всички устройства веднага.
+          </p>
+        </div>
+        
         <div class="config-buttons">
           <button class="btn btn-primary" @click="exportConfiguration">
             📥 Изтегли конфигурацията
@@ -161,13 +171,15 @@
             🔄 Възстанови по подразбиране
           </button>
         </div>
+        
         <div class="config-note">
-          <p><strong>Важно:</strong> За да запазите промените глобално за всички устройства:</p>
-          <ol>
-            <li>Изтеглете текущата конфигурация</li>
-            <li>Заменете файла <code>public/config.json</code> в проекта</li>
-            <li>Пуснете отново приложението</li>
-          </ol>
+          <p><strong>✨ Нова функционалност:</strong></p>
+          <ul>
+            <li>📊 Всички настройки се запазват автоматично в база данни</li>
+            <li>🌐 Промените са достъпни на всички устройства веднага</li>
+            <li>💾 Няма нужда от ръчно запазване или качване на файлове</li>
+            <li>📱 Работи на всички браузъри и устройства синхронно</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -617,6 +629,54 @@ export default {
   padding: 2px 4px;
   border-radius: 3px;
   font-family: 'Courier New', monospace;
+}
+
+.auto-save-status {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #155724;
+  margin-bottom: 5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #28a745;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #155724;
+  opacity: 0.9;
+}
+
+.config-note ul {
+  margin: 5px 0 0 0;
+  padding-left: 20px;
+}
+
+.config-note li {
+  font-size: 0.85rem;
+  margin-bottom: 3px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 @keyframes slideIn {

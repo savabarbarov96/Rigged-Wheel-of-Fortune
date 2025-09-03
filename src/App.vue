@@ -91,18 +91,46 @@ export default {
       ]
     }
 
-    // Load configuration from public/config.json or use defaults
+    // Load configuration from API or use defaults
     const loadWheelConfig = async () => {
       try {
-        const response = await fetch('/config.json')
+        // Use relative URL that works in both dev and production
+        const apiUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/config' : '/api/config'
+        const response = await fetch(apiUrl)
         if (response.ok) {
           const config = await response.json()
           return config
         }
       } catch (error) {
-        console.warn('Failed to load wheel config from config.json:', error)
+        console.warn('Failed to load wheel config from API:', error)
       }
       return defaultWheelConfig
+    }
+
+    // Save configuration to database via API
+    const saveWheelConfig = async (config) => {
+      try {
+        // Use correct URL for both dev and production
+        const apiUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api/config' : '/api/config'
+        const response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(config)
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const result = await response.json()
+        console.log('Configuration saved successfully:', result.message)
+        return result
+      } catch (error) {
+        console.error('Failed to save wheel config to API:', error)
+        throw error
+      }
     }
 
     // Export current configuration as downloadable JSON file
@@ -127,10 +155,12 @@ export default {
     const importConfig = (file) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           try {
             const config = JSON.parse(e.target.result)
             Object.assign(wheelConfig, config)
+            // Auto-save to database
+            await saveWheelConfig(wheelConfig)
             resolve(config)
           } catch (error) {
             reject(error)
@@ -181,14 +211,26 @@ export default {
       // Game is ready for next spin
     }
 
-    const updateWheelConfig = (newConfig) => {
+    const updateWheelConfig = async (newConfig) => {
       wheelConfig.sectors = newConfig.sectors
-      // Note: To persist changes globally, export the config and replace public/config.json
+      // Auto-save to database
+      try {
+        await saveWheelConfig(wheelConfig)
+      } catch (error) {
+        console.error('Failed to auto-save configuration:', error)
+        // Still allow the local change to persist for this session
+      }
     }
 
     // Reset to default configuration
-    const resetToDefaults = () => {
+    const resetToDefaults = async () => {
       Object.assign(wheelConfig, defaultWheelConfig)
+      // Auto-save to database
+      try {
+        await saveWheelConfig(wheelConfig)
+      } catch (error) {
+        console.error('Failed to save default configuration:', error)
+      }
     }
 
     // PIN Authentication - always require PIN entry

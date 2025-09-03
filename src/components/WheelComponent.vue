@@ -307,6 +307,7 @@ export default {
       wheelSvg,
       wheelGroup,
       wheelSize,
+      currentRotation,
       sectorAngles,
       getSectorPath,
       getTextX,
