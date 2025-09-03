@@ -31,7 +31,6 @@
               :fill="sector.color"
               :stroke="'#fff'"
               stroke-width="2"
-              :class="{ 'disabled-sector': sector.weight === 0 }"
             />
             
             <!-- Sector text -->
@@ -40,7 +39,6 @@
               :y="getTextY(index)"
               :transform="getTextTransform(index)"
               class="sector-text"
-              :class="{ 'disabled-text': sector.weight === 0 }"
               text-anchor="middle"
               dominant-baseline="middle"
             >
@@ -402,16 +400,5 @@ export default {
     width: 20px;
     height: 30px;
   }
-}
-
-/* Disabled sectors styling */
-.disabled-sector {
-  opacity: 0.4;
-  filter: grayscale(50%);
-}
-
-.disabled-text {
-  opacity: 0.6;
-  text-decoration: line-through;
 }
 </style>
