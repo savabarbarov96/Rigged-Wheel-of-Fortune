@@ -84,7 +84,7 @@ ehthumbs.db
 
 # Gatsby files
 .cache/
-public
+# public/  # Commented out to include public folder for deployment
 
 # Storybook build outputs
 .out
