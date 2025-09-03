@@ -1,0 +1,11 @@
+{
+  "sectors": [
+    { "id": 1, "label": "СПЕЧЕЛИ $100", "color": "#ff6b6b", "weight": 5, "isWinner": true },
+    { "id": 2, "label": "СПЕЧЕЛИ $50", "color": "#4ecdc4", "weight": 10, "isWinner": true },
+    { "id": 3, "label": "СПЕЧЕЛИ $25", "color": "#45b7d1", "weight": 15, "isWinner": true },
+    { "id": 4, "label": "ОПИТАЙ ОТНОВО", "color": "#96ceb4", "weight": 25, "isWinner": false },
+    { "id": 5, "label": "СПЕЧЕЛИ $10", "color": "#feca57", "weight": 20, "isWinner": true },
+    { "id": 6, "label": "БЕЗ ПЕЧАЛБА", "color": "#ff9ff3", "weight": 15, "isWinner": false },
+    { "id": 7, "label": "СПЕЧЕЛИ $5", "color": "#f0932b", "weight": 10, "isWinner": true }
+  ]
+}

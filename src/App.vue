@@ -33,6 +33,9 @@
       v-show="showAdmin"
       :config="wheelConfig"
       @update-config="updateWheelConfig"
+      @export-config="exportConfig"
+      @import-config="importConfig"
+      @reset-defaults="resetToDefaults"
     />
 
     <PinModal 
@@ -52,7 +55,7 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import WheelComponent from './components/WheelComponent.vue'
 import AdminPanel from './components/AdminPanel.vue'
 import ResultDisplay from './components/ResultDisplay.vue'
@@ -88,31 +91,64 @@ export default {
       ]
     }
 
-    // Load saved configuration from localStorage or use defaults
-    const loadWheelConfig = () => {
+    // Load configuration from public/config.json or use defaults
+    const loadWheelConfig = async () => {
       try {
-        const saved = localStorage.getItem('wheelConfig')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          return parsed
+        const response = await fetch('/config.json')
+        if (response.ok) {
+          const config = await response.json()
+          return config
         }
       } catch (error) {
-        console.warn('Failed to load wheel config from localStorage:', error)
+        console.warn('Failed to load wheel config from config.json:', error)
       }
       return defaultWheelConfig
     }
 
-    // Save configuration to localStorage
-    const saveWheelConfig = (config) => {
+    // Export current configuration as downloadable JSON file
+    const exportConfig = () => {
       try {
-        localStorage.setItem('wheelConfig', JSON.stringify(config))
+        const configData = JSON.stringify(wheelConfig, null, 2)
+        const blob = new Blob([configData], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'wheel-config.json'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
       } catch (error) {
-        console.warn('Failed to save wheel config to localStorage:', error)
+        console.error('Failed to export config:', error)
       }
     }
 
-    // Initialize wheel configuration with saved or default values
-    const wheelConfig = reactive(loadWheelConfig())
+    // Import configuration from uploaded JSON file
+    const importConfig = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const config = JSON.parse(e.target.result)
+            Object.assign(wheelConfig, config)
+            resolve(config)
+          } catch (error) {
+            reject(error)
+          }
+        }
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsText(file)
+      })
+    }
+
+    // Initialize wheel configuration (will be loaded asynchronously)
+    const wheelConfig = reactive(defaultWheelConfig)
+
+    // Load configuration on component mount
+    const initializeConfig = async () => {
+      const config = await loadWheelConfig()
+      Object.assign(wheelConfig, config)
+    }
 
     const { selectWinner } = useRigging()
 
@@ -147,14 +183,12 @@ export default {
 
     const updateWheelConfig = (newConfig) => {
       wheelConfig.sectors = newConfig.sectors
-      // Save the updated configuration to localStorage
-      saveWheelConfig(wheelConfig)
+      // Note: To persist changes globally, export the config and replace public/config.json
     }
 
     // Reset to default configuration
     const resetToDefaults = () => {
       Object.assign(wheelConfig, defaultWheelConfig)
-      saveWheelConfig(wheelConfig)
     }
 
     // PIN Authentication - always require PIN entry
@@ -176,7 +210,10 @@ export default {
       showPinModal.value = false
     }
 
-    // No longer checking authentication on mount as we require PIN every time
+    // Initialize configuration on component mount
+    onMounted(() => {
+      initializeConfig()
+    })
 
     return {
       wheelRef,
@@ -192,6 +229,8 @@ export default {
       resetGame,
       updateWheelConfig,
       resetToDefaults,
+      exportConfig,
+      importConfig,
       toggleAdmin,
       onPinSuccess,
       closePinModal

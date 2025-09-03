@@ -34,7 +34,7 @@
                   type="number" 
                   v-model.number="sector.weight"
                   @input="updateConfig"
-                  min="1"
+                  min="0"
                   max="100"
                 />
                 <span class="probability">{{ getProbability(sector.weight) }}%</span>
@@ -137,6 +137,39 @@
           </button>
         </div>
       </div>
+
+      <!-- Configuration Management -->
+      <div class="section">
+        <h4>Управление на конфигурацията</h4>
+        <div class="config-buttons">
+          <button class="btn btn-primary" @click="exportConfiguration">
+            📥 Изтегли конфигурацията
+          </button>
+          <div class="import-section">
+            <input 
+              type="file" 
+              ref="fileInput"
+              accept=".json"
+              @change="handleFileImport"
+              style="display: none"
+            />
+            <button class="btn btn-secondary" @click="$refs.fileInput.click()">
+              📤 Качи конфигурация
+            </button>
+          </div>
+          <button class="btn btn-warning" @click="resetToDefaults">
+            🔄 Възстанови по подразбиране
+          </button>
+        </div>
+        <div class="config-note">
+          <p><strong>Важно:</strong> За да запазите промените глобално за всички устройства:</p>
+          <ol>
+            <li>Изтеглете текущата конфигурация</li>
+            <li>Заменете файла <code>public/config.json</code> в проекта</li>
+            <li>Пуснете отново приложението</li>
+          </ol>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -153,7 +186,7 @@ export default {
       required: true
     }
   },
-  emits: ['update-config'],
+  emits: ['update-config', 'export-config', 'import-config', 'reset-defaults'],
   setup(props, { emit }) {
     const { calculateProbabilities, getStatistics, resetStatistics } = useRigging()
     
@@ -249,6 +282,32 @@ export default {
     const updateStatistics = () => {
       statistics.value = getStatistics()
     }
+
+    // Configuration management functions
+    const exportConfiguration = () => {
+      emit('export-config')
+    }
+
+    const handleFileImport = async (event) => {
+      const file = event.target.files[0]
+      if (!file) return
+
+      try {
+        await emit('import-config', file)
+        // Reset the file input
+        event.target.value = ''
+        alert('Конфигурацията е успешно заредена!')
+      } catch (error) {
+        console.error('Failed to import config:', error)
+        alert('Грешка при зареждане на конфигурацията. Моля проверете файла.')
+      }
+    }
+
+    const resetToDefaults = () => {
+      if (confirm('Сигурни ли сте, че искате да възстановите настройките по подразбиране?')) {
+        emit('reset-defaults')
+      }
+    }
     
     // Watch for external config changes
     watch(() => props.config, (newConfig) => {
@@ -270,7 +329,10 @@ export default {
       addSector,
       removeSector,
       loadPreset,
-      resetStats
+      resetStats,
+      exportConfiguration,
+      handleFileImport,
+      resetToDefaults
     }
   }
 }
@@ -518,6 +580,43 @@ export default {
   flex-wrap: wrap;
   gap: 5px;
   justify-content: center;
+}
+
+.config-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.config-note {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.config-note p {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+}
+
+.config-note ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
+.config-note code {
+  background: #e9ecef;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
 }
 
 @keyframes slideIn {
