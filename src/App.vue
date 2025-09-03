@@ -75,8 +75,8 @@ export default {
     const isAdminAuthenticated = ref(false)
     const lastResult = ref(null)
 
-    // Default wheel configuration
-    const wheelConfig = reactive({
+    // Default wheel configuration (fallback)
+    const defaultWheelConfig = {
       sectors: [
         { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 5, isWinner: true },
         { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 10, isWinner: true },
@@ -86,7 +86,33 @@ export default {
         { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#ff9ff3', weight: 15, isWinner: false },
         { id: 7, label: 'СПЕЧЕЛИ $5', color: '#f0932b', weight: 10, isWinner: true }
       ]
-    })
+    }
+
+    // Load saved configuration from localStorage or use defaults
+    const loadWheelConfig = () => {
+      try {
+        const saved = localStorage.getItem('wheelConfig')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          return parsed
+        }
+      } catch (error) {
+        console.warn('Failed to load wheel config from localStorage:', error)
+      }
+      return defaultWheelConfig
+    }
+
+    // Save configuration to localStorage
+    const saveWheelConfig = (config) => {
+      try {
+        localStorage.setItem('wheelConfig', JSON.stringify(config))
+      } catch (error) {
+        console.warn('Failed to save wheel config to localStorage:', error)
+      }
+    }
+
+    // Initialize wheel configuration with saved or default values
+    const wheelConfig = reactive(loadWheelConfig())
 
     const { selectWinner } = useRigging()
 
@@ -121,6 +147,14 @@ export default {
 
     const updateWheelConfig = (newConfig) => {
       wheelConfig.sectors = newConfig.sectors
+      // Save the updated configuration to localStorage
+      saveWheelConfig(wheelConfig)
+    }
+
+    // Reset to default configuration
+    const resetToDefaults = () => {
+      Object.assign(wheelConfig, defaultWheelConfig)
+      saveWheelConfig(wheelConfig)
     }
 
     // PIN Authentication - always require PIN entry
@@ -157,6 +191,7 @@ export default {
       closeResult,
       resetGame,
       updateWheelConfig,
+      resetToDefaults,
       toggleAdmin,
       onPinSuccess,
       closePinModal
