@@ -162,11 +162,11 @@
           </button>
         </div>
         <div class="config-note">
-          <p><strong>Важно:</strong> За да запазите промените глобално за всички устройства:</p>
+          <p><strong>Важно:</strong> Промените се запазват автоматично и няма да се загубят при рестартиране на сесията.</p>
+          <p>За да споделите конфигурацията с други устройства:</p>
           <ol>
             <li>Изтеглете текущата конфигурация</li>
-            <li>Заменете файла <code>public/config.json</code> в проекта</li>
-            <li>Пуснете отново приложението</li>
+            <li>Качете я на другото устройство чрез "Качи конфигурация"</li>
           </ol>
         </div>
       </div>
@@ -213,13 +213,14 @@ export default {
     
     const addSector = () => {
       const newId = Math.max(...localConfig.value.sectors.map(s => s.id)) + 1
-      const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe']
-      const randomColor = colors[Math.floor(Math.random() * colors.length)]
+      // Alternate between red and black (roulette style)
+      const currentCount = localConfig.value.sectors.length
+      const color = currentCount % 2 === 0 ? '#e74c3c' : '#1a1a1a' // red if even, black if odd
       
       localConfig.value.sectors.push({
         id: newId,
         label: `Сектор ${newId}`,
-        color: randomColor,
+        color: color,
         weight: 10,
         isWinner: true
       })
@@ -240,32 +241,32 @@ export default {
       switch (presetName) {
         case 'fair':
           presetSectors = [
-            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 20, isWinner: true },
-            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 20, isWinner: true },
-            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 20, isWinner: true },
-            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 20, isWinner: true },
-            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 20, isWinner: false }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#00C851', weight: 20, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#e74c3c', weight: 20, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#1a1a1a', weight: 20, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#e74c3c', weight: 20, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#1a1a1a', weight: 20, isWinner: false }
           ]
           break
           
         case 'rigged-low':
           presetSectors = [
-            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 2, isWinner: true },
-            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 5, isWinner: true },
-            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 8, isWinner: true },
-            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 10, isWinner: true },
-            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 25, isWinner: false },
-            { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#ff9ff3', weight: 50, isWinner: false }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#00C851', weight: 2, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#e74c3c', weight: 5, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#1a1a1a', weight: 8, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#e74c3c', weight: 10, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#1a1a1a', weight: 25, isWinner: false },
+            { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#e74c3c', weight: 50, isWinner: false }
           ]
           break
           
         case 'rigged-high':
           presetSectors = [
-            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 15, isWinner: true },
-            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 25, isWinner: true },
-            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 30, isWinner: true },
-            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#96ceb4', weight: 20, isWinner: true },
-            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#feca57', weight: 10, isWinner: false }
+            { id: 1, label: 'СПЕЧЕЛИ $100', color: '#00C851', weight: 15, isWinner: true },
+            { id: 2, label: 'СПЕЧЕЛИ $50', color: '#e74c3c', weight: 25, isWinner: true },
+            { id: 3, label: 'СПЕЧЕЛИ $25', color: '#1a1a1a', weight: 30, isWinner: true },
+            { id: 4, label: 'СПЕЧЕЛИ $10', color: '#e74c3c', weight: 20, isWinner: true },
+            { id: 5, label: 'ОПИТАЙ ОТНОВО', color: '#1a1a1a', weight: 10, isWinner: false }
           ]
           break
       }

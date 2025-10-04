@@ -5,6 +5,12 @@
       Колело на късмета
     </h1>
     
+    <!-- Session Timer -->
+    <div v-if="isSessionValid" class="session-timer">
+      <span class="timer-icon">⏱️</span>
+      <span class="timer-text">Сесия: {{ Math.floor(remainingTime / 60) }}:{{ String(remainingTime % 60).padStart(2, '0') }}</span>
+    </div>
+    
     <WheelComponent 
       :sectors="wheelConfig.sectors"
       :isSpinning="isSpinning"
@@ -16,9 +22,9 @@
       <button 
         class="btn spin-btn" 
         @click="spin"
-        :disabled="isSpinning"
+        :disabled="isSpinning || !isSessionValid"
       >
-        {{ isSpinning ? 'ВЪРТИ СЕ...' : 'ЗАВЪРТИ КОЛЕЛОТО' }}
+        {{ isSpinning ? 'ВЪРТИ СЕ...' : !isSessionValid ? 'ВЪВЕДИ ПИН' : 'ЗАВЪРТИ КОЛЕЛОТО' }}
       </button>
     </div>
 
@@ -38,10 +44,18 @@
       @reset-defaults="resetToDefaults"
     />
 
+    <!-- Admin PIN Modal -->
     <PinModal 
       :show="showPinModal"
       @close="closePinModal"
       @success="onPinSuccess"
+    />
+
+    <!-- Main Access PIN Modal -->
+    <PinModal 
+      :show="showMainPinModal"
+      @close="closeMainPinModal"
+      @success="onMainPinSuccess"
     />
 
     <button 
@@ -55,12 +69,13 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import WheelComponent from './components/WheelComponent.vue'
 import AdminPanel from './components/AdminPanel.vue'
 import ResultDisplay from './components/ResultDisplay.vue'
 import PinModal from './components/PinModal.vue'
 import { useRigging } from './composables/useRigging.js'
+import { useSession } from './composables/useSession.js'
 
 export default {
   name: 'App',
@@ -75,33 +90,75 @@ export default {
     const isSpinning = ref(false)
     const showAdmin = ref(false)
     const showPinModal = ref(false)
+    const showMainPinModal = ref(false)
     const isAdminAuthenticated = ref(false)
     const lastResult = ref(null)
+
+    // Session management
+    const { 
+      isSessionValid, 
+      createSession, 
+      initSession, 
+      startSessionMonitor, 
+      stopSessionMonitor,
+      remainingTime 
+    } = useSession()
 
     // Default wheel configuration (fallback)
     const defaultWheelConfig = {
       sectors: [
-        { id: 1, label: 'СПЕЧЕЛИ $100', color: '#ff6b6b', weight: 5, isWinner: true },
-        { id: 2, label: 'СПЕЧЕЛИ $50', color: '#4ecdc4', weight: 10, isWinner: true },
-        { id: 3, label: 'СПЕЧЕЛИ $25', color: '#45b7d1', weight: 15, isWinner: true },
-        { id: 4, label: 'ОПИТАЙ ОТНОВО', color: '#96ceb4', weight: 25, isWinner: false },
-        { id: 5, label: 'СПЕЧЕЛИ $10', color: '#feca57', weight: 20, isWinner: true },
-        { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#ff9ff3', weight: 15, isWinner: false },
-        { id: 7, label: 'СПЕЧЕЛИ $5', color: '#f0932b', weight: 10, isWinner: true }
+        { id: 1, label: 'СПЕЧЕЛИ $100', color: '#00C851', weight: 5, isWinner: true },
+        { id: 2, label: 'СПЕЧЕЛИ $50', color: '#e74c3c', weight: 10, isWinner: true },
+        { id: 3, label: 'СПЕЧЕЛИ $25', color: '#1a1a1a', weight: 15, isWinner: true },
+        { id: 4, label: 'ОПИТАЙ ОТНОВО', color: '#e74c3c', weight: 25, isWinner: false },
+        { id: 5, label: 'СПЕЧЕЛИ $10', color: '#1a1a1a', weight: 20, isWinner: true },
+        { id: 6, label: 'БЕЗ ПЕЧАЛБА', color: '#e74c3c', weight: 15, isWinner: false },
+        { id: 7, label: 'СПЕЧЕЛИ $5', color: '#1a1a1a', weight: 10, isWinner: true }
       ]
     }
 
-    // Load configuration from public/config.json or use defaults
+    const WHEEL_CONFIG_KEY = 'wheel_config'
+
+    // Save configuration to localStorage
+    const saveWheelConfig = (config) => {
+      try {
+        localStorage.setItem(WHEEL_CONFIG_KEY, JSON.stringify(config))
+      } catch (error) {
+        console.error('Failed to save wheel config:', error)
+      }
+    }
+
+    // Load configuration from localStorage first, then config.json, then defaults
     const loadWheelConfig = async () => {
+      // First, try to load from localStorage (user's saved config)
+      try {
+        const stored = localStorage.getItem(WHEEL_CONFIG_KEY)
+        if (stored) {
+          const config = JSON.parse(stored)
+          console.log('Loaded wheel config from localStorage')
+          return config
+        }
+      } catch (error) {
+        console.warn('Failed to load wheel config from localStorage:', error)
+      }
+
+      // Second, try to load from config.json (default config)
       try {
         const response = await fetch('/config.json')
         if (response.ok) {
           const config = await response.json()
+          console.log('Loaded wheel config from config.json')
+          // Save to localStorage for future use
+          saveWheelConfig(config)
           return config
         }
       } catch (error) {
         console.warn('Failed to load wheel config from config.json:', error)
       }
+
+      // Finally, fall back to hardcoded defaults
+      console.log('Using default wheel config')
+      saveWheelConfig(defaultWheelConfig)
       return defaultWheelConfig
     }
 
@@ -131,6 +188,8 @@ export default {
           try {
             const config = JSON.parse(e.target.result)
             Object.assign(wheelConfig, config)
+            // Save imported config to localStorage
+            saveWheelConfig(wheelConfig)
             resolve(config)
           } catch (error) {
             reject(error)
@@ -153,6 +212,12 @@ export default {
     const { selectWinner } = useRigging()
 
     const spin = async () => {
+      // Check session validity before spinning
+      if (!isSessionValid.value) {
+        showMainPinModal.value = true
+        return
+      }
+
       if (isSpinning.value) return
 
       isSpinning.value = true
@@ -183,12 +248,15 @@ export default {
 
     const updateWheelConfig = (newConfig) => {
       wheelConfig.sectors = newConfig.sectors
-      // Note: To persist changes globally, export the config and replace public/config.json
+      // Save to localStorage to persist across sessions
+      saveWheelConfig(wheelConfig)
     }
 
     // Reset to default configuration
     const resetToDefaults = () => {
       Object.assign(wheelConfig, defaultWheelConfig)
+      // Save reset config to localStorage
+      saveWheelConfig(wheelConfig)
     }
 
     // PIN Authentication - always require PIN entry
@@ -210,9 +278,45 @@ export default {
       showPinModal.value = false
     }
 
-    // Initialize configuration on component mount
+    // Main PIN modal handlers for session access
+    const onMainPinSuccess = () => {
+      createSession()
+      showMainPinModal.value = false
+    }
+
+    const closeMainPinModal = () => {
+      showMainPinModal.value = false
+      // If session is still invalid, show modal again after a delay
+      setTimeout(() => {
+        if (!isSessionValid.value) {
+          showMainPinModal.value = true
+        }
+      }, 500)
+    }
+
+    // Handle session expiration
+    const onSessionExpire = () => {
+      showMainPinModal.value = true
+    }
+
+    // Initialize configuration and session on component mount
     onMounted(() => {
       initializeConfig()
+      
+      // Initialize session
+      const existingSession = initSession()
+      if (!existingSession || !isSessionValid.value) {
+        // No valid session, show PIN modal
+        showMainPinModal.value = true
+      }
+      
+      // Start monitoring session expiration
+      startSessionMonitor(onSessionExpire)
+    })
+
+    // Clean up on unmount
+    onUnmounted(() => {
+      stopSessionMonitor()
     })
 
     return {
@@ -220,9 +324,12 @@ export default {
       isSpinning,
       showAdmin,
       showPinModal,
+      showMainPinModal,
       isAdminAuthenticated,
       lastResult,
       wheelConfig,
+      isSessionValid,
+      remainingTime,
       spin,
       onSpinComplete,
       closeResult,
@@ -233,7 +340,9 @@ export default {
       importConfig,
       toggleAdmin,
       onPinSuccess,
-      closePinModal
+      closePinModal,
+      onMainPinSuccess,
+      closeMainPinModal
     }
   }
 }
@@ -295,6 +404,36 @@ export default {
   transform: scale(1.1);
 }
 
+.session-timer {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.session-timer:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.timer-icon {
+  font-size: 1.2rem;
+}
+
+.timer-text {
+  font-family: 'Courier New', monospace;
+}
+
 @media (max-width: 768px) {
   .title {
     font-size: 2rem;
@@ -310,6 +449,17 @@ export default {
     font-size: 1.1rem;
     padding: 15px 30px;
     min-width: 180px;
+  }
+
+  .session-timer {
+    top: 10px;
+    left: 10px;
+    padding: 8px 15px;
+    font-size: 0.8rem;
+  }
+
+  .timer-icon {
+    font-size: 1rem;
   }
 }
 </style>
